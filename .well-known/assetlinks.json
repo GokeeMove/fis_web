@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.kuaiduizuoye.scan",
+    "sha256_cert_fingerprints": ["3B:9D:73:BC:F6:7E:91:F1:40:9A:1A:B8:59:61:E9:C5:2C:76:93:C9:5C:D3:C6:6C:B9:8A:13:24:70:05:06:CD"]
+  }
+}]
