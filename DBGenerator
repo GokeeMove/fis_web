@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>Template</title>
+        <link rel="stylesheet" href="res/css/highlight/zenburn.css" />
+        <link rel="stylesheet" href="res/css/index.css" />
+	</head>
+	<body>
+        <form>
+            <fieldset>
+                <legend>请选择项目</legend>
+                <select id="project">
+                    <option value="-1">==请选择==</option>
+                    <option value="1">homework</option><option value="2">iknow</option><option value="3">mbaby</option>                </select>
+                <ul id="tables">
+                </ul>
+                <div>
+                    <input type="button" value="新建表" id="createTable" />
+                    <input type="button" value="删除表" id="deleteTable" />
+                </div>
+            </fieldset>
+            <fieldset style="display:none;">
+                <legend>导入数据编辑</legend>
+                <textarea id="meta"></textarea>
+                <input type="button" value=" 导入 " id="import" />
+            </fieldset>
+            <fieldset>
+            <legend>表信息</legend>
+            <input type="text" name="tableName" placeholder="表名称(驼峰命名)" /> //
+            <input type="text" name="tableComment" placeholder="表注释" /> @Version
+            <input type="number" name="version" placeholder="表版本号" />
+            </fieldset>
+            <fieldset>
+            <legend>字段信息</legend>
+            <ol>
+            </ol>
+            <input type="button" value="+添加字段" id="add" />
+            <input type="button" value="保存" id="save" />
+            </fieldset>
+        </form>
+        <button id="generate">生成代码</button>
+        <div id="model">
+            <h1><span></span><input type="button" value="复制到剪贴板"/></h1>
+            <pre><code></code></pre>
+        </div>
+        <div id="table">
+            <h1><span></span><input type="button" value="复制到剪贴板"/></h1>
+            <pre><code></code></pre>
+        </div>
+<noscript id="table_tpl">
+package com.baidu.android.db.table;
+
+import android.content.ContentValues;
+import android.database.Cursor;
+import android.database.SQLException;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteQueryBuilder;
+import com.baidu.android.db.core.DatabaseManager;
+<{if $hasArray}>
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+<{/if}>
+<{if $hasMap}>
+import java.util.HashMap;
+<{/if}>
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import com.baidu.android.db.model.<{$tableName|capitalize}>Model;
+import android.os.SystemClock;
+/**
+ * Created by MODEL GENERATOR(http://fedev.baidu.com/~zhangshuangnan/table/)
+<{javascript}>
+$this.jsonData = JSON.stringify({tableName:$this.tableName,tableComment:$this.tableComment,fields:$this.fields});
+<{/javascript}>
+ * 将以下json数据导入模型编辑器可以修改生成的代码
+ * <{$jsonData}>
+ *
+ * <{$tableComment}>
+ */
+public class <{$tableName|capitalize}>Table {
+    /**
+     * 表名
+     */
+    public static final String TABLE_NAME = <{$tableName|capitalize}>Model.class.getSimpleName();
+    //表的各个数据字段名称
+<{foreach $fields as $field}>
+    public static final String <{$field.name|upper}> = "<{$field.name}>";
+<{/foreach}>
+<{if $hasPrimaryKey}>
+    //用于格式化生成主键的格式化字符串
+    private static final String PRIMARY_KEY_WHERE = "<{foreach $fields as $field}><{if $field.isPrimaryKey}><{$field.name}> =? <{/if}><{/foreach}>";
+<{/if}>
+    /**
+     * 获取全部数据
+     */
+    public static List<<{$tableName|capitalize}>Model> queryAll(){
+        return query(false, null, null, null, null, null, null,null);
+    }
+    /**
+     * 根据Where条件查询数据
+     * @param selection 例如:"qid=? and rid=?"
+     * @param selectionArgs 例如 12,23
+     * @return
+     */
+    public static List<<{$tableName|capitalize}>Model> query(String selection,Object ... selectionArgs){
+        return query(false, null,selection, selectionArgs, null, null, null, null);
+    }
+    /**
+     * 根据Where条件查询数据
+     * @param selection 例如:"qid=? and rid=?"
+     * @param selectionArgs 例如 12,23
+     * @param orderBy 排序的字段
+     * @return
+     */
+    public static List<<{$tableName|capitalize}>Model> query(String selection,Object[] selectionArgs,String orderBy){
+        return query(false,null,selection,selectionArgs,null,null,orderBy,null);
+    }
+    /**
+     * 根据Where条件查询数据
+     * @param selection 例如:"qid=? and rid=?"
+     * @param selectionArgs 例如 12,23
+     * @param orderBy 排序的字段
+     * @param limit 对应sql的limit语句
+     * @return
+     */
+    public static List<<{$tableName|capitalize}>Model> query(String selection,Object[] selectionArgs,String orderBy,String limit){
+        return query(false,null,selection,selectionArgs,null,null,orderBy,limit);
+    }
+    /**
+     * 原始的查询方法，参数参见{@link android.database.sqlite.SQLiteDatabase#query}
+     * @return 根据查询条件过滤过的model，如果出错返回null
+     */
+    public synchronized static List<<{$tableName|capitalize}>Model> query(boolean distinct,String[] columns, String selection,
+                                               Object[] selectionArgs, String groupBy, String having,
+                                               String orderBy,String limit){
+        long begin = SystemClock.elapsedRealtime();
+        SQLiteDatabase db = DatabaseManager.getDatabase();
+        if (!db.isOpen()) {
+            return null;
+        }
+        Cursor cursor = null;
+        List<<{$tableName|capitalize}>Model> entities = null;
+        String[] convertedArgs = getConvertedArgs(selectionArgs);
+        try {
+            cursor = db.query(distinct,TABLE_NAME, columns, selection, convertedArgs, groupBy, having, orderBy,limit);
+            if (cursor != null && cursor.getCount() > 0) {
+                entities = new ArrayList<<{$tableName|capitalize}>Model>();
+                while(cursor.moveToNext()) {
+                    <{$tableName|capitalize}>Model info = getModelByCursor(cursor);
+                    if (info != null) {
+                        entities.add(info);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            entities = null;
+        }finally {
+            if (cursor != null) {
+                try {cursor.close();}catch (Exception e) {}
+            }
+        }
+        DatabaseManager.getPerformanceLogger().logQuery(TABLE_NAME,SystemClock.elapsedRealtime()-begin, SQLiteQueryBuilder.buildQueryString(distinct,TABLE_NAME, columns, selection, groupBy, having, orderBy,limit),entities == null ?0:entities.size());
+        return entities;
+    }
+    /**
+     * 替换一条记录
+     * @param entity 插入的记录
+     * @return 插入记录是否成功
+     */
+    public synchronized static boolean replace(<{$tableName|capitalize}>Model entity){
+        long begin = SystemClock.elapsedRealtime();
+        SQLiteDatabase db = DatabaseManager.getDatabase();
+        ContentValues cv;
+        try{
+            cv = getContentValues(entity,null);
+        }catch(Exception e){
+            e.printStackTrace();
+            return false;
+        }
+        if(!db.isOpen()){
+            return false;
+        }
+        long ret = -1L;
+        try {
+            ret = db.replaceOrThrow(TABLE_NAME, null, cv);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        DatabaseManager.getPerformanceLogger().logReplaceSingle(TABLE_NAME,SystemClock.elapsedRealtime()-begin,ret>0);
+        return ret>0;
+    }
+
+    /**
+     * 替换多条记录（全部成功，或者全部失败）
+     * @param entities 插入记录List
+     * @return 插入是否成功
+     */
+    public synchronized static boolean replace(List<<{$tableName|capitalize}>Model> entities){
+        long begin = SystemClock.elapsedRealtime();
+        SQLiteDatabase db = DatabaseManager.getDatabase();
+        if (entities == null || entities.size()==0) {
+            return false;
+        }
+        if(!db.isOpen()){
+            return false;
+        }
+        int count = 0;
+        db.beginTransaction();
+        try {
+            for(<{$tableName|capitalize}>Model entity:entities){
+                ContentValues cv;
+                try{
+                    cv = getContentValues(entity,null);
+                }catch(Exception e){
+                    e.printStackTrace();
+                    return false;
+                }
+                if(!(db.replaceOrThrow(TABLE_NAME, null, cv)>0)){
+                    return false;
+                }
+                count++;
+            }
+            db.setTransactionSuccessful();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }finally{
+            db.endTransaction();
+        }
+        DatabaseManager.getPerformanceLogger().logReplace(TABLE_NAME,SystemClock.elapsedRealtime()-begin,entities.size(),count == entities.size());
+        if(count != entities.size()){
+            return false;
+        }
+        return true;
+    }
+    /**
+     * 插入一条记录并拿到刚插入的记录(用于有自增主键的case)
+     * @param entity
+     * @return null if error
+     */
+    public synchronized static <{$tableName|capitalize}>Model insertAndGet(<{$tableName|capitalize}>Model entity){
+        long begin = SystemClock.elapsedRealtime();
+        <{$tableName|capitalize}>Model ret = null;
+        SQLiteDatabase db = DatabaseManager.getDatabase();
+        ContentValues cv;
+        try{
+            cv = getContentValues(entity,null);
+        }catch(Exception e){
+            e.printStackTrace();
+            return null;
+        }
+        if(!db.isOpen()){
+            return null;
+        }
+        db.beginTransaction();
+        long rowid = db.insertOrThrow(TABLE_NAME, null, cv);
+        if(rowid != -1){
+            List<<{$tableName|capitalize}>Model> res = query("_rowid_=?",rowid);
+            if(res !=null){
+                db.setTransactionSuccessful();
+                db.endTransaction();
+                ret = res.get(0);
+            }
+        }
+        db.endTransaction();
+        DatabaseManager.getPerformanceLogger().logInsertAndGetSingle(TABLE_NAME,SystemClock.elapsedRealtime()-begin,ret != null);
+        return null;
+    }
+    /**
+     * 插入一条记录
+     * @param entity 插入的记录
+     * @return 插入记录是否成功
+     */
+    public synchronized static boolean insert(<{$tableName|capitalize}>Model entity){
+        long begin = SystemClock.elapsedRealtime();
+        SQLiteDatabase db = DatabaseManager.getDatabase();
+        ContentValues cv;
+        try{
+            cv = getContentValues(entity,null);
+        }catch(Exception e){
+            e.printStackTrace();
+            return false;
+        }
+        if(!db.isOpen()){
+            return false;
+        }
+        long ret = -1L;
+        try {
+            ret = db.insertOrThrow(TABLE_NAME, null, cv);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        DatabaseManager.getPerformanceLogger().logInsertSingle(TABLE_NAME,SystemClock.elapsedRealtime()-begin,ret>0);
+        return ret>0;
+    }
+
+    /**
+     * 插入多条记录（全部成功，或者全部失败）
+     * @param entities 插入记录List
+     * @return 插入是否成功
+     */
+    public synchronized static boolean insert(List<<{$tableName|capitalize}>Model> entities){
+        long begin = SystemClock.elapsedRealtime();
+        SQLiteDatabase db = DatabaseManager.getDatabase();
+        if (entities == null || entities.size()==0) {
+            return false;
+        }
+        if(!db.isOpen()){
+            return false;
+        }
+        int count = 0;
+        db.beginTransaction();
+        try {
+            for(<{$tableName|capitalize}>Model entity:entities){
+                ContentValues cv;
+                try{
+                    cv = getContentValues(entity,null);
+                }catch(Exception e){
+                    e.printStackTrace();
+                    return false;
+                }
+                if(!(db.insertOrThrow(TABLE_NAME, null, cv)>0)){
+                    return false;
+                }
+                count++;
+            }
+            db.setTransactionSuccessful();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }finally{
+            db.endTransaction();
+        }
+        DatabaseManager.getPerformanceLogger().logInsert(TABLE_NAME,SystemClock.elapsedRealtime()-begin,entities.size(),count == entities.size());
+        if(count != entities.size()){
+            return false;
+        }
+        return true;
+    }
+    /**
+     * 根据条件删除数据库中的数据
+     * @param whereClause
+     * @param whereArgs
+     * @return 如果成功，返回受影响的行数，否则返回-1
+     */
+    public synchronized static int delete(String whereClause,Object ... whereArgs){
+        long begin = SystemClock.elapsedRealtime();
+        SQLiteDatabase db = DatabaseManager.getDatabase();
+        if (!db.isOpen()) {
+            return -1;
+        }
+        String[] convertedArgs = getConvertedArgs(whereArgs);
+        int ret = -1;
+        try{
+            ret = db.delete(TABLE_NAME,whereClause,convertedArgs);
+        }catch (Exception e){
+            e.printStackTrace();
+            ret = -1;
+        }
+        DatabaseManager.getPerformanceLogger().logDelete(TABLE_NAME,SystemClock.elapsedRealtime()-begin,"DELETE from "+TABLE_NAME+" where "+whereClause,ret);
+        return ret;
+    }
+    /**
+     * 删除table中的所有记录
+     * @return 删除是否成功
+     */
+    public synchronized static boolean deleteAll(){
+        long begin = SystemClock.elapsedRealtime();
+        SQLiteDatabase db = DatabaseManager.getDatabase();
+        if (!db.isOpen()) {
+            return false;
+        }
+        db.beginTransaction();
+        boolean ret = false;
+        try {
+            db.execSQL("DELETE FROM " + "["+TABLE_NAME + "]");
+            db.setTransactionSuccessful();
+            ret = true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            ret =  false;
+        }finally{
+            db.endTransaction();
+        }
+        DatabaseManager.getPerformanceLogger().logDeleteAll(TABLE_NAME,SystemClock.elapsedRealtime()-begin);
+        return ret;
+    }
+    /**
+     * 根据条件更新数据库中的一条数据
+     * @param entity 保存要更新的数据的entity
+     * @param columnsToUpdate 一个保存了需要更新哪些字段的数组
+     * @param whereClause where语句
+     * @param whereArgs where语句的参数
+     * @return 是否成功
+     */
+    public synchronized static boolean update(final <{$tableName|capitalize}>Model entity,String[] columnsToUpdate,String whereClause,Object... whereArgs) {
+        long begin = SystemClock.elapsedRealtime();
+        SQLiteDatabase db = DatabaseManager.getDatabase();
+        if (entity == null) {
+            return false;
+        }
+        if (!db.isOpen()) {
+            return false;
+        }
+        String[] convertedArgs = getConvertedArgs(whereArgs);
+        boolean ret;
+        try {
+            ret =  1 == db.update(TABLE_NAME, getContentValues(entity,columnsToUpdate), whereClause, convertedArgs);
+        }catch (Exception e) {
+            e.printStackTrace();
+            ret = false;
+        }
+        DatabaseManager.getPerformanceLogger().logUpdateSingle(TABLE_NAME,SystemClock.elapsedRealtime()-begin,ret);
+        return ret;
+    }
+<{if $hasPrimaryKey}>
+    /**
+     * 通过主键删除数据库中的一条记录
+     * @param entity 要删除的实体，需要确其保传主键不为空
+     * @return 删除是否成功
+     */
+    public synchronized static boolean deleteByPrimaryKey(final <{$tableName|capitalize}>Model entity){
+        long begin = SystemClock.elapsedRealtime();
+        SQLiteDatabase db = DatabaseManager.getDatabase();
+        if (!db.isOpen()) {
+            return false;
+        }
+        if (entity == null) {
+            return false;
+        }
+        String[] whereValue = {
+<{foreach $fields as $field}>
+<{if $field.isPrimaryKey}>
+<{if $field.type == 'boolean'}>
+            entity.<{$field.name}>?"1":"0"
+
+<{else}>
+            String.valueOf(entity.<{$field.name}>)
+            
+<{/if}>
+<{/if}>
+<{/foreach}>
+        };
+        boolean ret = false;
+        try{
+            ret =  1 == db.delete(TABLE_NAME,PRIMARY_KEY_WHERE,whereValue);
+        }catch (Exception e){
+            e.printStackTrace();
+            ret = false;
+        }
+        DatabaseManager.getPerformanceLogger().logDeleteSingle(TABLE_NAME,SystemClock.elapsedRealtime()-begin,ret);
+        return ret;
+    }
+    /**
+     * 通过主键更新数据库中的一条记录
+     * @param entity 要更新的实体，需要确保传主键不为空
+     * @return 更新记录是否成功
+     */
+    public synchronized static boolean updateByPrimaryKey(final <{$tableName|capitalize}>Model entity) {
+        SQLiteDatabase db = DatabaseManager.getDatabase();
+        long begin = SystemClock.elapsedRealtime();
+        if (!db.isOpen()) {
+            return false;
+        }
+        if (entity == null) {
+            return false;
+        }
+
+        String[] whereValue = {
+<{foreach $fields as $field}>
+<{if $field.isPrimaryKey}>
+<{if $field.type == 'boolean'}>
+            entity.<{$field.name}>?"1":"0"
+<{else}>
+            String.valueOf(entity.<{$field.name}>)
+<{/if}>
+<{/if}>
+<{/foreach}>
+        };
+        boolean ret;
+        try {
+            ret =  1 == db.update(TABLE_NAME, getContentValues(entity,null), PRIMARY_KEY_WHERE, whereValue);
+        } catch (Exception e) {
+            e.printStackTrace();
+            ret = false;
+        }
+        DatabaseManager.getPerformanceLogger().logUpdateSingle(TABLE_NAME,SystemClock.elapsedRealtime()-begin,ret);
+        return ret;
+    }
+    /**
+     * 通过主键更新数据库中的多条记录
+     * @param entities 要更新的数据集合，需要确保传主键不为空
+     * @return 返回更新成功记录数量
+     */
+    public synchronized static int updateByPrimaryKey(final List<<{$tableName|capitalize}>Model> entities) {
+        long begin = SystemClock.elapsedRealtime();
+        SQLiteDatabase db = DatabaseManager.getDatabase();
+        if (entities == null || entities.size() == 0) {
+            return 0;
+        }
+        String[] whereValue = new String[1];
+        if (!db.isOpen()) {
+            return 0;
+        }
+        int count = 0;
+        db.beginTransaction();
+        try {
+            for (<{$tableName|capitalize}>Model entity : entities) {
+<{foreach $fields as $field}>
+<{if $field.isPrimaryKey}>
+                whereValue[0] = String.valueOf(entity.<{$field.name}>);
+<{/if}>
+<{/foreach}>
+                int rn = db.update(TABLE_NAME, getContentValues(entity,null), PRIMARY_KEY_WHERE, whereValue);
+                count += rn;
+            }
+            db.setTransactionSuccessful();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            db.endTransaction();
+        }
+        DatabaseManager.getPerformanceLogger().logUpdate(TABLE_NAME,SystemClock.elapsedRealtime() - begin,count,count == entities.size());
+        return count;
+    }
+<{/if}>
+    /**
+     * 根据Model获取ContentValues
+     * 例如：插入一条Model之前需要先将Model转化为ContentValues，才能进行插入操作
+     * @param entity 要转化为ContentValues的数据
+     * @param columnsToUpdate 存储要更新的字段的数组
+     * @return
+     */
+    private static ContentValues getContentValues(<{$tableName|capitalize}>Model entity,String[] columnsToUpdate)<{if $hasArray}> throws IOException<{/if}>{
+        ContentValues cv = new ContentValues();
+        List<String> list = null;
+        if(columnsToUpdate != null){
+            list = Arrays.asList(columnsToUpdate);
+        }
+<{foreach $fields as $field}>
+<{if !$field.isAutoIncrement}>
+        if(list == null || list.contains(<{$field.name|upper}>)){
+<{if $field.type == 'boolean'}>
+            cv.put(<{$field.name|upper}>,entity.<{$field.name}>?1:0);
+<{elseif $field.type == 'ArrayList' || $field.type == 'HashMap'}>
+            if(null != entity.<{$field.name}>){
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ObjectOutputStream oos = new ObjectOutputStream(baos);
+                oos.writeObject(entity.<{$field.name}>);
+                cv.put(<{$field.name|upper}>,baos.toByteArray());
+                baos.close();oos.close();
+            }
+<{else}>
+            cv.put(<{$field.name|upper}>,entity.<{$field.name}>);
+<{/if}>
+        }
+<{/if}>
+<{/foreach}>
+
+        return cv;
+    }
+
+    /**
+     * 将Cursor转化成不一定完整的Model对象，会检测每个字段是否存在，如果不存在就不会设置
+     * @param cursor 游标
+     * @return
+     */
+    private static <{$tableName|capitalize}>Model getModelByCursor(Cursor cursor){
+        <{$tableName|capitalize}>Model entity = new <{$tableName|capitalize}>Model();
+        int columnIndex;
+        try {
+<{foreach $fields as $field}>
+            columnIndex = cursor.getColumnIndex(<{$field.name|upper}>);
+            if(columnIndex != -1 && !cursor.isNull(columnIndex)){
+<{if $field.type == 'boolean'}>
+                entity.<{$field.name}> = cursor.getInt(columnIndex) == 1;
+<{elseif $field.type == 'ArrayList' || $field.type == 'HashMap'}>
+                ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(cursor.getBlob(columnIndex)));
+                entity.<{$field.name}> = (<{$field.type}>)ois.readObject();
+                ois.close();
+<{else}>
+                entity.<{$field.name}> = cursor.get<{$field.type|capitalize}>(columnIndex);
+<{/if}>
+            }
+<{/foreach}>
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+        return entity;
+    }
+    private static String[] getConvertedArgs(Object ... whereArgs){
+        String[] convertedArgs = null;
+        if(null != whereArgs && whereArgs.length>0){
+            //将Object参数数组转化成String类型数组，主要是为了处理Boolean,枚举类型
+            convertedArgs = new String[whereArgs.length];
+            for(int i=0,j=whereArgs.length;i<j;i++){
+                if(whereArgs[i] instanceof Boolean){
+                    if((Boolean)whereArgs[i]){
+                        convertedArgs[i] = "1";
+                    }else{
+                        convertedArgs[i] = "0";
+                    }
+                }else{
+                    convertedArgs[i] = String.valueOf(whereArgs[i]);
+                }
+            }
+        }
+        return convertedArgs;
+    }
+}
+</noscript>
+<noscript id="model_tpl">
+package com.baidu.android.db.model;
+<{if $hasArray}>
+import java.util.ArrayList;
+<{/if}>
+<{if $hasMap}>
+import java.util.HashMap;
+<{/if}>
+import com.baidu.android.db.core.DatabaseCreator.*;
+import com.baidu.android.db.core.TableSchema;
+
+/**
+ * Created by MODEL GENERATOR(http://fedev.baidu.com/~zhangshuangnan/table/)
+<{javascript}>
+$this.jsonData = JSON.stringify({version:$this.version,tableName:$this.tableName,tableComment:$this.tableComment,fields:$this.fields});
+<{/javascript}>
+ * 将以下json数据导入模型编辑器可以修改生成的代码
+ * <{$jsonData}>
+ *
+ * <{$tableComment}>
+ */
+@Version(<{$version}>)
+public class <{$tableName|capitalize}>Model extends TableSchema{
+<{foreach $fields as $field}><{if $field.comment}>
+    /**
+     <{$field.comment}>
+     */
+<{/if}>
+<{if $field.isPrimaryKey}>
+    @PrimaryKey(autoIncrement = <{if $field.isAutoIncrement}>true<{else}>false<{/if}>)
+<{/if}>
+<{if $field.default}>
+<{if $field.type == "String"}>
+    @Default(stringValue = "<{$field.default}>")
+<{else}>
+    @Default(<{$field.type}>Value = <{$field.default}>)
+<{/if}>
+<{/if}>
+<{if $field.isNotNull}>
+    @NotNull
+<{/if}>
+<{if $field.indexName}>
+    @Index("<{$field.indexName}>")
+<{/if}>
+public <{$field.type}><{if $field.subType}><<{$field.subType}>><{/if}> <{$field.name}>;
+<{/foreach}>
+<{if $hasPrimaryKey}>
+    @Override
+    public boolean equals(Object o) {
+        <{$tableName|capitalize}>Model model = (<{$tableName|capitalize}>Model)o;
+        boolean ret = true;
+<{foreach $fields as $field}>
+<{if $field.isPrimaryKey}>
+        ret &= model.<{$field.name}> == this.<{$field.name}>;
+<{/if}>
+<{/foreach}>
+        return ret;
+    }
+<{/if}>
+}
+</noscript>
+<noscript id="field_tpl">
+<li class="field">
+    <select name="type">
+        <option value="String">String</option>
+        <option value="int">int</option>
+        <option value="boolean">boolean</option>
+        <option value="short">short</option>
+        <option value="byte">byte</option>
+        <option value="float">float</option>
+        <option value="long">long</option>
+        <option value="double">double</option>
+        <option value="ArrayList">ArrayList</option>
+        <!--<option value="HashMap">HashMap</option>-->
+    </select>
+    <span class="sub-type" style="display:none">
+    &lt;<select name="subType">
+            <option value="String">String</option>
+            <option value="Integer">Integer</option>
+            <option value="Boolean">Boolean</option>
+            <option value="Float">Float</option>
+            <option value="Long">Long</option>
+            <option value="Double">Double</option>
+            <option value="Short">Short</option>
+            <option value="Byte">Byte</option>
+        </select>&gt;
+    </span>
+    <input type="text" name="name" style="width:80px" placeholder="name" />
+    <input type="text" name="default" style="width:80px" placeholder="default value" />
+     //
+    <input type="text" name="comment" style="width:180px" placeholder="comment" />
+    主键:<input type="radio" name="isPrimaryKey" />&nbsp;
+    自增:<input type="checkbox" name="isAutoIncrement" disabled="disabled"/>&nbsp;
+    非空:<input type="checkbox" name="isNotNull" />&nbsp;
+    索引名:<input type="text" name="indexName" style="width:80px" placeholder="index name" />
+</li>
+</noscript>
+
+        <script src="res/js/jquery-1.10.2.min.js"></script>
+        <script src="res/js/jquery-ui-1.10.3.custom.min.js"></script>
+        <script src="res/js/smart-2.9.min.js"></script>
+        <script src="res/js/highlight.pack.js"></script>
+        <script src="res/js/index.js"></script>
+	</body>
+</html><!--13728701411626384576122519-->
+<script> var _trace_page_logid = 1372870141; </script>
