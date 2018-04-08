@@ -34,7 +34,7 @@ def getContent(url):
     content = urlopen(url)
     bsObj = BeautifulSoup(content, "lxml")
     title = str(bsObj.title.get_text())
-    tfile = open("/Users/libowen/Desktop/" + title.split("-")[1] + ".txt", 'a')
+    tfile = open("dadaozhengfeng.txt", 'a')
     tfile.write("\n\n\n" + str(bsObj.title.get_text()) + "\n")
     tfile.write(bsObj.find_all("div", {"id": "content"})[0].get_text())
     tfile.close()
